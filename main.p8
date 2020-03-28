@@ -142,17 +142,15 @@ function update_bee()
   -- actions
   -- left
   if(btn(0)) then
-   cam_x-=p.cur_spd
    p.sp_st=32
    p.flp_x=true
    if(p.x > 0) then
-    p.x+=p.cur_spd
+    p.x-=p.cur_spd
    end
   end
   
   -- right
   if(btn(1)) then
-   cam_x+=p.cur_spd
    p.sp_st=32
    p.flp_x=false
    if(p.x < 127 - p.sp_sz * 8) then
@@ -162,7 +160,6 @@ function update_bee()
   
   -- up
   if(btn(2)) then
-   cam_y-=p.cur_spd
    p.sp_st=0
    p.flp_y=false
    if(p.y > 0) then
@@ -172,7 +169,6 @@ function update_bee()
   
   -- down
   if(btn(3)) then
-   cam_y+=p.cur_spd
    p.sp_st=0
    p.flp_y=true
    if(p.y < 127 - p.sp_sz * 8) then
