@@ -46,13 +46,13 @@ function iou(o1,o2)
 end
 
 function debug_infos(x,y)
- print(dt.."/"..stat(7),x,y,3)
- if(btn(0)) then print("⬅️",x,y+12,3) end
- if(btn(1)) then print("➡️",x+16,y+12,3) end
- if(btn(2)) then print("⬆️",x+8,y+6,3) end
- if(btn(3)) then print("⬇️",x+8,y+12,3) end
- if(btn(4)) then print("🅾️",x+16,y+6,3) end
- if(btn(5)) then print("❎",x,y+6,3) end
+ if(btn(0)) then print("⬅️",x,y+6,3) end
+ if(btn(1)) then print("➡️",x+16,y+6,3) end
+ if(btn(2)) then print("⬆️",x+8,y,3) end
+ if(btn(3)) then print("⬇️",x+8,y+6,3) end
+ if(btn(4)) then print("🅾️",x+16,y,3) end
+ if(btn(5)) then print("❎",x,y,3) end
+ print("tmr:"..p.tmr,x,y+16,3)
  print("cur_pln:"..p.cur_pln,x,y+24,3)
  print("tot_pln:"..p.tot_pln,x,y+32,3)
 end
@@ -85,10 +85,6 @@ end
 
 -- ** actual game ** --
 function _init()
- dt=0
- w=128 -- width of the game map
- h=128 -- height of the game map
- 
  init_bee_base()
  -- todo
  exploration_init()
@@ -130,17 +126,16 @@ end
 function update_bee()
  p.tmr+=1  -- internal timer. 30fps
  
- -- animation
- if p.tmr == 10 then  -- 1/2 sec
-  p.sp = p.sp_st
- end
- if p.tmr >= 20 then  -- 1/2 sec
-  p.sp += p.sp_sz
-  p.tmr = 0  -- restart timer
- end	
- 
  -- action
  if(not p.action) then
+  -- animation
+  if(p.tmr == 10) then
+   p.sp = p.sp_st
+  end
+  if(p.tmr >= 20) then
+   p.sp += p.sp_sz
+   p.tmr = 0  -- restart timer
+  end
   if(btn(0)) then  -- left
    p.sp_st=32
    p.flp_x=true
@@ -170,9 +165,12 @@ function update_bee()
    end
   end
   -- action (X) -- todo talk w/ bees
-  if btn(5) then  
-   get_pln()
+  if btn(5) then
+   p.action=true  -- lock the player
+   p.tmr = 0  -- restart timer
   end
+ else
+  get_pln()
  end
  
  -- polen
@@ -187,14 +185,31 @@ function check_flower(f)
 end
 
 function get_pln()
- -- todo add animation
- foreach(flowers,check_flower)
+ if(p.tmr == 15) then
+  p.sp = p.sp_st + 2 * p.sp_sz
+ end
+ if(p.tmr == 30) then
+  p.sp += p.sp_sz
+ end
+ if(p.tmr == 45) then
+  p.sp += p.sp_sz
+ end
+ if(p.tmr == 75) then
+  foreach(flowers,check_flower)
+ end
+ if(p.tmr == 120) then
+  p.sp -= p.sp_sz
+ end
+ if(p.tmr == 135) then
+  p.sp -= p.sp_sz
+ end
+ if(p.tmr == 150) then
+  p.sp -= p.sp_sz
+  p.action=false
+ end
 end
 
 function exploration_update()
- -- delta time
- dt+=1
- 
  update_bee()
 end
 
