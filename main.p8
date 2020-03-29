@@ -586,31 +586,26 @@ function exploration_draw()
  camera()
   
  -- pollen
- if(p.cur_pln < 0.25*p.max_pln) then
-  palt(9,true)
- else
-  palt(9,false)
- end
- spr(84,2,9,2,1)
- if(p.cur_pln < 0.75*p.max_pln) then
-  palt(9,true)
- else
-  palt(9,false)
- end
- spr(68,2,1,2,1)
- palt(9,false)
- if(p.cur_pln > p.max_pln) then  -- does not work
-  for i=1,p.max_pln-p.cur_pln do
-   local offset=flr(rnd(16))
-   pset(2+offset,1+offset,9)
-   pset(2+offset+1,1+offset,9)
-   pset(2+offset,1+offset+1,9)
-   pset(2+offset+1,1+offset+1,9)
-  end
- end
+ draw_pollen_sphere(2,1,p.cur_pln,p.max_pln)
  
  -- textboxes
  dtb_draw()
+end
+
+function draw_pollen_sphere(x,y,curr,maxx)
+ if(curr < 0.25*maxx) then
+  palt(9,true)
+ else
+  palt(9,false)
+ end
+ spr(84,x,y+8,2,1)
+ if(curr < 0.75*maxx) then
+  palt(9,true)
+ else
+  palt(9,false)
+ end
+ spr(68,x,y,2,1)
+ palt(9,false)
 end
 -->8
 -- story
@@ -656,21 +651,21 @@ function story_init()
 end
 
 function queen_status()
- if(hive.pln<10) then
+ if(hive.pln<20) then
   dtb_disp("the queen seems to be in really bad shape...")
   dtb_disp("we need to forage more!")
  end
- if(hive.pln>=10 and hive.pln<20) then
+ if(hive.pln>=20 and hive.pln<40) then
   dtb_disp("the bees went back to work.")
   dtb_disp("maybe there is hope.")
  end
- if(hive.pln>=20 and hive.pln<30) then
+ if(hive.pln>=40 and hive.pln<60) then
   dtb_disp("we're going to make it... probably!")
  end
- if(hive.pln>=30 and hive.pln<40) then
+ if(hive.pln>=60 and hive.pln<80) then
   dtb_disp("more pollen, more pollen...")
  end
- if(hive.pln>=50) then
+ if(hive.pln>=80) then
   dtb_disp("the queen is back! hooray")
  end
 end
@@ -747,6 +742,16 @@ function story_draw()
  
   -- bee
  player_draw()
+ 
+ -- pollen...
+ draw_pollen_sphere(17,38,min(hive.pln,20),20)
+ draw_pollen_sphere(33,6,min(hive.pln,40),40)
+ draw_pollen_sphere(65,38,min(hive.pln,60),60)
+ draw_pollen_sphere(113,38,min(hive.pln,80),80)
+ draw_pollen_sphere(129,6,min(hive.pln,100),100)
+ 
+ -- reset camera
+ camera()
  
  -- text boxes
  dtb_draw()
