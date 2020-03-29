@@ -620,6 +620,8 @@ function story_init()
  cam_y=0
 
  -- reset internal timer and set first sprite
+ p.flp_x=false
+ p.flp_y=false
  p.sp_st=14
  p.tmr=0
  
