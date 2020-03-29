@@ -202,8 +202,7 @@ function intro_draw()
   _update=dtb_update
   _draw=dtb_draw
   
-  dtb_disp("⬅️,➡️,⬆️,⬇️:move;              ❎:action (forage, talk, ..); 🅾️:choose/end dialogue")
-  dtb_disp("press 🅾️ to start",exploration_init)
+  dtb_disp("⬅️,➡️,⬆️,⬇️:move;              ❎:action (forage, talk, ..); 🅾️:choose/end dialogue",exploration_init)
  end
 end
 -->8
