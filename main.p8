@@ -632,8 +632,47 @@ function story_init()
  p.x=0
  p.y=74
  
+ -- pollen!
+ -- player
+ p.tot_pln+=p.cur_pln
+ hive.pln+=p.cur_pln
+ p.cur_pln=0
+ 
+ -- bees
+ for b in all(bees) do
+  if(b.cur_pln > b.max_pln) then
+   -- the bee did not get here...
+   b.cur_pln=0
+  end
+  b.tot_pln+=b.cur_pln
+  hive.pln+=b.cur_pln
+  b.cur_pln=0
+ end
+ 
+ queen_status()
+ 
  _update=story_update
  _draw=story_draw
+end
+
+function queen_status()
+ if(hive.pln<10) then
+  dtb_disp("the queen seems to be in really bad shape...")
+  dtb_disp("we need to forage more!")
+ end
+ if(hive.pln>=10 and hive.pln<20) then
+  dtb_disp("the bees went back to work.")
+  dtb_disp("maybe there is hope.")
+ end
+ if(hive.pln>=20 and hive.pln<30) then
+  dtb_disp("we're going to make it... probably!")
+ end
+ if(hive.pln>=30 and hive.pln<40) then
+  dtb_disp("more pollen, more pollen...")
+ end
+ if(hive.pln>=50) then
+  dtb_disp("the queen is back! hooray")
+ end
 end
 
 -- ** story updating ** --
@@ -681,8 +720,6 @@ function player_story_update()
  
  -- action (X) -- todo talk w/ bees
  if btnp(5) then
- 
- dtb_disp("test")
   --p.action=true  -- lock the player
   p.tmr = 0  -- restart timer
  end
