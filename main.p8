@@ -47,12 +47,12 @@ function debug_infos(x,y)
  if(btn(4)) then print("🅾️",x+16,y,7) end
  if(btn(5)) then print("❎",x,y,7) end
  print("tmr:"..p.tmr,x,y+16,7)
- print("p.x:"..p.x,x,y+24,7)
- print("p.y:"..p.y,x,y+32,7)
+ print("bee.x:"..bees[1].x,x,y+24,7)
+ print("bee.y:"..bees[1].y,x,y+32,7)
 end
 
--- ** bee - general ** --
-function bee_base_init()
+-- ** bees - general ** --
+function player_init()
  p={
   name="barry",
   tot_pln=0,  -- cumulative polen
@@ -73,8 +73,30 @@ function bee_base_init()
  }
 end
 
-function bee_draw()
+function player_draw()
  spr(p.sp,p.x,p.y,p.sp_sz,p.sp_sz,p.flp_x,p.flp_y)
+end
+
+function bees_init()
+ bees={}
+ add(bees,{
+  name="beeatrice",  -- buzz, beenedict, beelzebub, beeyonce, obee wan, rubee, beely, kirbee, ...
+  tot_pln=0,  -- cumulative polen
+  cur_pln=0,  -- current polen
+  max_pln=10,  -- max usable polen before slowdown in speed
+  cur_spd=3,  -- speed
+  max_spd=3,
+  x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
+  y=64,
+  box={x1=1,y1=1,x2=14,y2=14},  -- collision box
+  sp=0,  -- current sprite
+  sp_st=0,  -- first sprite of the animation
+  sp_sz=2,  -- sprite size
+  flp_x=false,  -- should the sprite be flipped horizontally
+  flp_y=false,  -- should the sprite be flipped vertically
+  action=false,  -- can't move if action is true
+  tmr=0  -- internal timer
+ })
 end
 
 -- ** actual game ** --
@@ -102,7 +124,8 @@ end
 
 function intro()
  -- todo lol
- bee_base_init()
+ player_init()
+ bees_init()
  exploration_init()
  _update=exploration_update
  _draw=exploration_draw
@@ -110,6 +133,13 @@ end
 -->8
 -- exploration
 -- ** exploration - initialisation ** --
+function bee_exploration_init(bee)
+-- each bee will start at a random position, with a random polen quantity
+ bee.x=flr(rnd(map_width-4 - p.sp_sz * 8)+4)  -- x,y coordinates
+ bee.y=flr(rnd(map_height-4 - p.sp_sz * 8)+4)
+ bee.cur_pln=flr(rnd(30))  -- could be improved with a nice gaussian
+end
+
 function flowers_init(nbr)
 -- create a number of flowers between 1 and nbr.
  flowers={}
@@ -138,7 +168,7 @@ function hive_init()
   sp=70,  -- current sprite
   sp_sz=4,  -- sprite size
   pln=0  -- polen quantity
-  }
+ }
 end
 
 function exploration_init()
@@ -152,15 +182,26 @@ function exploration_init()
  -- hive
  hive_init()
  
- -- camera coordinates for the map
- cam_x=0
- cam_y=0
+ -- player starts at the hive
+ p.x=hive.x+hive.sp_sz*4
+ p.y=hive.y+hive.sp_sz*4
  
- tlrnc=0.10  -- percentage of match between bee and flower
+ -- other bees start wherever
+ foreach(bees,bee_exploration_init)
+ 
+ -- camera coordinates for the map
+ cam_x=p.x-64
+ cam_y=p.y-64
+ 
+ -- percentage of match between player and flower
+ tlrnc=0.10
+ 
+ -- reset internal timer
+ p.tmr=0
 end
 
 -- ** exploration - updating ** --
-function bee_update()
+function player_exploration_update()
  p.tmr+=1  -- internal timer. 30fps
  
  if(not p.action) then
@@ -235,14 +276,12 @@ function bee_update()
   end
   
   -- action (X) -- todo talk w/ bees
-  if btn(5) then
+  if btnp(5) then
    p.action=true  -- lock the player
    p.tmr = 0  -- restart timer
   end
  else
   get_down()
-  -- get_pln()
-  -- get_into_hive()
  end
  
  -- polen
@@ -303,15 +342,21 @@ function check_flower(f)
  end
 end
 
-function get_pln()
--- basically an animation with black magic...
+function bee_exploration_update(bee)
+ -- todo random mouvement
 end
 
 function exploration_update()
- bee_update()
+ player_exploration_update()
+ foreach(bees,bee_exploration_update)
 end
 
 -- ** exploration - drawing ** --
+function bee_draw(bee)
+ print(bee.name,5,5,5)
+ spr(bee.sp,bee.x,bee.y,bee.sp_sz,bee.sp_sz,bee.flp_x,bee.flp_y)
+end
+
 function hive_draw()
  spr(hive.sp,hive.x,hive.y,hive.sp_sz,hive.sp_sz)
 end
@@ -346,7 +391,7 @@ function exploration_draw()
  camera(cam_x, cam_y)
  
  -- draw the entire map -- todo
- map(0, 0, 0, 0, 128, 64)
+ map(0, 0, 0, 0, 48, 48)
  
  -- hive
  hive_draw()
@@ -354,21 +399,104 @@ function exploration_draw()
  -- flowers
  foreach(flowers,flower_draw)
  
- -- bee
- bee_draw() 
+ -- bees
+ foreach(bees,bee_draw)
+ 
+ -- player
+ player_draw()
+ 
+ debug_infos(0,0)
 end
 -->8
 -- story
+-- ** story initialisation ** --
 function story_init()
+ -- map
+ map_width=128*2
+ map_height=128
+ 
+ -- camera coordinates for the map
+ cam_x=0
+ cam_y=0
 
+ -- reset internal timer and set first sprite
+ p.sp_st=10
+ p.tmr=0
+ 
+ _update=story_update
+ _draw=story_draw
+end
+
+-- ** story updating ** --
+function player_story_update()
+ p.tmr+=1  -- internal timer. 30fps
+ 
+ -- animation
+ if(p.tmr == 10) then
+  p.sp = p.sp_st
+ end
+ if(p.tmr >= 20) then
+  p.sp += p.sp_sz
+  p.tmr = 0  -- restart timer
+ end
+ 
+ -- actions
+ -- left
+ if(btn(0)) then
+  p.sp_st=32
+  p.flp_x=true
+  
+  if(cam_x > 0 and p.x-cam_x==64) then
+   cam_x-=p.cur_spd
+   p.x-=p.cur_spd
+  else
+   if(p.x > 4) then
+    p.x-=p.cur_spd
+   end
+  end
+ end
+ 
+ -- right
+ if(btn(1)) then
+  p.sp_st=32
+  p.flp_x=false
+ 
+  if(cam_x < map_width-128 and p.x-cam_x==64) then
+   cam_x+=p.cur_spd
+   p.x+=p.cur_spd
+  else
+   if(p.x < map_width-4 - p.sp_sz * 8) then
+    p.x+=p.cur_spd
+   end
+  end
+ end
+ 
+ -- action (X) -- todo talk w/ bees
+ if btnp(5) then
+  p.action=true  -- lock the player
+  p.tmr = 0  -- restart timer
+ end
+
+ -- polen
+  p.cur_spd=p.max_spd-flr(p.cur_pln/(p.max_pln + 1))
 end
 
 function story_update()
 
 end
 
+-- ** story drawing ** --
 function story_draw()
-
+ cls()
+ 
+ -- set the camera to the current location
+ camera(cam_x, cam_y)
+ 
+ -- draw the entire map -- todo
+ map(48, 0, 0, 0, 32, 16)
+ 
+  -- bee
+ player_draw()
 end
 __gfx__
 000000000000000000000099900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d222222d
