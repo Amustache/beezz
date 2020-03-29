@@ -47,8 +47,8 @@ function debug_infos(x,y)
  if(btn(4)) then print("🅾️",x+16,y,7) end
  if(btn(5)) then print("❎",x,y,7) end
  print("tmr:"..p.tmr,x,y+16,7)
- print("bee.x:"..bees[1].x,x,y+24,7)
- print("bee.y:"..bees[1].y,x,y+32,7)
+ print("p.x:"..p.x,x,y+24,7)
+ print("p.y:"..p.y,x,y+32,7)
 end
 
 -- ** bees - general ** --
@@ -89,7 +89,43 @@ function bees_init()
   x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
   y=64,
   box={x1=1,y1=1,x2=14,y2=14},  -- collision box
-  sp=0,  -- current sprite
+  sp=10,  -- current sprite
+  sp_st=10,  -- first sprite of the animation
+  sp_sz=2,  -- sprite size
+  flp_x=false,  -- should the sprite be flipped horizontally
+  flp_y=false,  -- should the sprite be flipped vertically
+  action=false,  -- can't move if action is true
+  tmr=0  -- internal timer
+ })
+ add(bees,{
+  name="beertrand",  -- buzz, beenedict, beelzebub, beeyonce, obee wan, rubee, beely, kirbee, ...
+  tot_pln=0,  -- cumulative polen
+  cur_pln=0,  -- current polen
+  max_pln=10,  -- max usable polen before slowdown in speed
+  cur_spd=3,  -- speed
+  max_spd=3,
+  x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
+  y=64,
+  box={x1=1,y1=1,x2=14,y2=14},  -- collision box
+  sp=10,  -- current sprite
+  sp_st=10,  -- first sprite of the animation
+  sp_sz=2,  -- sprite size
+  flp_x=false,  -- should the sprite be flipped horizontally
+  flp_y=false,  -- should the sprite be flipped vertically
+  action=false,  -- can't move if action is true
+  tmr=0  -- internal timer
+ })
+ add(bees,{
+  name="beenedict",  -- buzz, beenedict, beelzebub, beeyonce, obee wan, rubee, beely, kirbee, ...
+  tot_pln=0,  -- cumulative polen
+  cur_pln=0,  -- current polen
+  max_pln=10,  -- max usable polen before slowdown in speed
+  cur_spd=3,  -- speed
+  max_spd=3,
+  x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
+  y=64,
+  box={x1=1,y1=1,x2=14,y2=14},  -- collision box
+  sp=10,  -- current sprite
   sp_st=10,  -- first sprite of the animation
   sp_sz=2,  -- sprite size
   flp_x=false,  -- should the sprite be flipped horizontally
@@ -101,10 +137,16 @@ end
 
 -- ** actual game ** --
 function _init()
+ player_init()
+ bees_init()
+ 
  -- text boxes
  dtb_init()
  
- menu_init()
+ --menu_init()
+ story_init()
+ _update=story_update
+ _draw=story_draw
 end
 -->8
 -- menu and intro
@@ -128,9 +170,6 @@ end
 
 -- ** intro ** --
 function intro_init()
- player_init()
- bees_init()
- 
  intro_msg_set(1)
  
  _update=nil
@@ -211,7 +250,7 @@ function exploration_init()
  cam_x=p.x-64
  cam_y=p.y-64
  
- -- percentage of match between player and flower
+ -- percentage of match between two objects if collision
  tlrnc=0.10
  
  -- reset internal timer
@@ -227,6 +266,10 @@ function player_exploration_update()
  p.tmr+=1  -- internal timer. 30fps
  
  if(not p.action) then
+  -- check for bees: save current position
+  local px = p.x
+  local py = p.y
+ 
   -- animation
   if(p.tmr == 10) then
    p.sp = p.sp_st
@@ -242,7 +285,7 @@ function player_exploration_update()
    p.sp_st=32
    p.flp_x=true
    
-   if(cam_x > 0 and p.x-cam_x==64) then
+   if(cam_x > 0 and p.x-cam_x<64) then
     cam_x-=p.cur_spd
     p.x-=p.cur_spd
    else
@@ -257,7 +300,7 @@ function player_exploration_update()
    p.sp_st=32
    p.flp_x=false
    
-   if(cam_x < map_width-128 and p.x-cam_x==64) then
+   if(cam_x < map_width-128 and p.x-cam_x>64) then
     cam_x+=p.cur_spd
     p.x+=p.cur_spd
    else
@@ -272,7 +315,7 @@ function player_exploration_update()
    p.sp_st=0
    p.flp_y=false
    
-   if(cam_y > 0 and p.y-cam_y==64) then
+   if(cam_y > 0 and p.y-cam_y<64) then
     cam_y-=p.cur_spd
     p.y-=p.cur_spd
    else
@@ -287,7 +330,7 @@ function player_exploration_update()
    p.sp_st=0
    p.flp_y=true
    
-   if(cam_y < map_height-128 and p.y-cam_y==64) then
+   if(cam_y < map_height-128 and p.y-cam_y>64) then
     cam_y+=p.cur_spd
     p.y+=p.cur_spd
    else
@@ -298,16 +341,68 @@ function player_exploration_update()
   end
   
   -- action (X) -- todo talk w/ bees
-  if btnp(5) then
+  if(btnp(5)) then
    p.action=true  -- lock the player
    p.tmr = 0  -- restart timer
   end
+  
+  -- check for bees: if there is a bee, then...
+  for b in all(bees) do
+   if(check_collision_bee(b)) then
+    -- back to old position
+    p.x=px
+    p.y=py
+   end
+  end
  else
-  get_down()
+  -- shall we talk?
+  local talk=false
+  for b in all(bees) do
+   b.box.x1-=5
+   b.box.y1-=5
+   b.box.x2+=5
+   b.box.y2+=5
+   
+   if(check_collision_bee(b)) then
+    talk=true
+    talk_to_bee(b)
+   end
+   
+   b.box.x1+=5
+   b.box.y1+=5
+   b.box.x2-=5
+   b.box.y2-=5
+  end
+  if(not talk) then
+   get_down()
+  end
  end
  
  -- polen
   p.cur_spd=p.max_spd-flr(p.cur_pln/(p.max_pln + 1))
+end
+
+bees_hello = {"hey!","greetings.","hi!","howdy!","bonjour!","good day."}
+bees_ok = {"all is right!","you okay?","i'm fine!","all the best for you.","all hail the queen!","la probabilité de voir ce message est de 0.005%."}
+
+function talk_to_bee(bee)
+ dtb_disp(bee.name..": "..bees_hello[1+flr(rnd(#bees_hello))])
+ if(bee.cur_pln > bee.max_pln) then
+  dtb_disp(bee.name..": j'ai trop de pollen!")
+  dtb_disp(bee.name..": est-ce que tu peux m'en prendre?")
+ else
+  if(bee.cur_pln < bee.max_pln) then
+   dtb_disp(bee.name..": j'ai pas assez de pollen!")
+   dtb_disp(bee.name..": est-ce que tu peux m'en donner?")
+  else
+   dtb_disp(bee.name..": "..bees_ok[1+flr(rnd(#bees_ok))])
+  end
+ end
+ p.action=false
+end
+
+function choice_take()
+ p.action=false
 end
 
 function get_down()
@@ -346,8 +441,16 @@ function get_down()
  end
 end
 
+function check_collision_bee(bee)
+ if(iou(p,bee) >= .1*tlrnc) then
+  return true
+ else
+  return false
+ end
+end
+
 function get_into_hive()
- if(iou(p,hive) >= tlrnc) then
+ if(iou(p,hive) >= 2*tlrnc) then
   story_init()
   return true
  else
@@ -367,6 +470,16 @@ end
 
 function bee_exploration_update(bee)
  -- todo random mouvement
+ -- animation
+ -- internal timer
+ bee.tmr+=1
+ if(bee.tmr == 10) then
+  bee.sp = bee.sp_st
+ end
+ if(bee.tmr >= 20) then
+  bee.sp += bee.sp_sz
+  bee.tmr = 0  -- restart timer
+ end
 end
 
 function exploration_update()
@@ -445,7 +558,7 @@ end
 -- ** story initialisation ** --
 function story_init()
  -- map
- map_width=128*2
+ map_width=128*1.5
  map_height=128
  
  -- camera coordinates for the map
@@ -453,8 +566,12 @@ function story_init()
  cam_y=0
 
  -- reset internal timer and set first sprite
- p.sp_st=10
+ p.sp_st=14
  p.tmr=0
+ 
+ -- start position
+ p.x=0
+ p.y=74
  
  _update=story_update
  _draw=story_draw
@@ -469,32 +586,31 @@ function player_story_update()
   p.sp = p.sp_st
  end
  if(p.tmr >= 20) then
-  p.sp += p.sp_sz
+  p.sp = 46
   p.tmr = 0  -- restart timer
  end
  
  -- actions
  -- left
  if(btn(0)) then
-  p.sp_st=32
   p.flp_x=true
   
-  if(cam_x > 0 and p.x-cam_x==64) then
+  if(cam_x > 0 and p.x-cam_x<64) then
    cam_x-=p.cur_spd
    p.x-=p.cur_spd
   else
-   if(p.x > 4) then
-    p.x-=p.cur_spd
+   p.x-=p.cur_spd
+   if(p.x < -8) then
+    exploration_init()
    end
   end
  end
  
  -- right
  if(btn(1)) then
-  p.sp_st=32
   p.flp_x=false
  
-  if(cam_x < map_width-128 and p.x-cam_x==64) then
+  if(cam_x < map_width-128 and p.x-cam_x>64) then
    cam_x+=p.cur_spd
    p.x+=p.cur_spd
   else
@@ -506,7 +622,9 @@ function player_story_update()
  
  -- action (X) -- todo talk w/ bees
  if btnp(5) then
-  p.action=true  -- lock the player
+ 
+ dtb_disp("test")
+  --p.action=true  -- lock the player
   p.tmr = 0  -- restart timer
  end
 
@@ -515,7 +633,10 @@ function player_story_update()
 end
 
 function story_update()
-
+ player_story_update()
+ 
+ -- text boxes
+ dtb_update()
 end
 
 -- ** story drawing ** --
@@ -526,10 +647,15 @@ function story_draw()
  camera(cam_x, cam_y)
  
  -- draw the entire map -- todo
- map(48, 0, 0, 0, 32, 16)
+ map(0, 0, 0, 0, 32, 16)
  
   -- bee
  player_draw()
+ 
+ -- text boxes
+ dtb_draw()
+ 
+ debug_infos(5,5)
 end
 -->8
 -- textboxes
@@ -598,7 +724,7 @@ function _dtb_nextline()
   dtb_dislines[i]=dtb_dislines[i+1]
  end
  dtb_dislines[#dtb_dislines]=""
- -- sfx(2)
+ sfx(2)
 end
 
 function _dtb_nexttext()
@@ -608,7 +734,7 @@ function _dtb_nexttext()
  del(dtb_queuf,dtb_queuf[1])
  del(dtb_queu,dtb_queu[1])
  _dtb_clean()
- -- sfx(2)
+ sfx(2)
 end
 
 -- make sure that this function is called each update.
@@ -634,7 +760,7 @@ function dtb_update()
      local curchar=sub(curlines[dtb_curline],curchari,curchari)
      dtb_ltime=1
      if curchar~=" " then
-      -- sfx(0)
+      sfx(0)
      end
      if curchar=="." then
       dtb_ltime=6
@@ -832,11 +958,11 @@ end
  -- keep the last line empty to end the fucker.
  -- last character is discarded
  ' ',
- '$c09the queen is ill.$cxx ',
- 'recent $c09pollen harvests have   \n not been very successful, and \n it is the main source of      \n $c09energy$cxx for the entire $c09hive$cxx. ',
- 'the $c09queen$cxx is the              \n personification of the health  \n of the $c09hive$cxx. if the $c09hive$cxx falls,\n so does the $c09queen$cxx. ',
- 'as a faithful member of the   \n $c09hive$cxx - your home - it is your  \n duty to collect $c09pollen$cxx, with   \n the help of your companions, to\n give it enough resources and   \n $c09energy$cxx to survive for years to \n come. ',
- 'good thing, the $c09flowers$cxx came  \n back. go, collect the $c09pollen$cxx   \n from the $c09flowers$cxx, and bring it \n back to the $c09hive$cxx. only the work\n of all the bees can save the   \n $c09hive$cxx. ',
+ 'the $c09queen$cxx is $c09ill$cxx. ',
+ 'recent $c09pollen$cxx harvests have   \n not been very successful, and \n it is the main source of      \n $c09energy$cxx for the entire $c09hive$cxx. ',
+ 'the $c09queen$cxx is the personifica- \n tion of the health of the\n $c09hive$cxx. if the $c09hive$cxx falls,\n so does the $c09queen$cxx. ',
+ 'as a faithful member of the   \n $c09hive$cxx - your home - it is your  \n duty to collect $c09pollen$cxx, with   \n the help of your companions.\n give it enough resources and\n $c09energy$cxx to survive for years\n to come. ',
+ 'good thing, the $c09flowers$cxx came  \n back. go, collect the $c09pollen$cxx   \n from the $c09flowers$cxx, and bring\n it back to the $c09hive$cxx. only the\n work of all the bees can save\n the $c09hive$cxx! ',
  ''
  --'$c09welcome$cxx to the introduction!',
  --'you can draw sprites\n$i01   like this, and you can\n\nadd a delay$d04...$dxxlike this!',
