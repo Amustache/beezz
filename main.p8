@@ -55,9 +55,9 @@ end
 function player_init()
  p={
   name="barry",
-  tot_pln=0,  -- cumulative polen
-  cur_pln=0,  -- current polen
-  max_pln=10,  -- max usable polen before slowdown in speed
+  tot_pln=0,  -- cumulative pollen
+  cur_pln=0,  -- current pollen
+  max_pln=10,  -- max usable pollen before slowdown in speed
   cur_spd=3,  -- speed
   max_spd=3,
   x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
@@ -81,9 +81,9 @@ function bees_init()
  bees={}
  add(bees,{
   name="beeatrice",  -- buzz, beenedict, beelzebub, beeyonce, obee wan, rubee, beely, kirbee, ...
-  tot_pln=0,  -- cumulative polen
-  cur_pln=0,  -- current polen
-  max_pln=10,  -- max usable polen before slowdown in speed
+  tot_pln=0,  -- cumulative pollen
+  cur_pln=0,  -- current pollen
+  max_pln=10,  -- max usable pollen before slowdown in speed
   cur_spd=3,  -- speed
   max_spd=3,
   x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
@@ -99,9 +99,9 @@ function bees_init()
  })
  add(bees,{
   name="beertrand",  -- buzz, beenedict, beelzebub, beeyonce, obee wan, rubee, beely, kirbee, ...
-  tot_pln=0,  -- cumulative polen
-  cur_pln=0,  -- current polen
-  max_pln=10,  -- max usable polen before slowdown in speed
+  tot_pln=0,  -- cumulative pollen
+  cur_pln=0,  -- current pollen
+  max_pln=10,  -- max usable pollen before slowdown in speed
   cur_spd=3,  -- speed
   max_spd=3,
   x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
@@ -117,9 +117,9 @@ function bees_init()
  })
  add(bees,{
   name="beenedict",  -- buzz, beenedict, beelzebub, beeyonce, obee wan, rubee, beely, kirbee, ...
-  tot_pln=0,  -- cumulative polen
-  cur_pln=0,  -- current polen
-  max_pln=10,  -- max usable polen before slowdown in speed
+  tot_pln=0,  -- cumulative pollen
+  cur_pln=0,  -- current pollen
+  max_pln=10,  -- max usable pollen before slowdown in speed
   cur_spd=3,  -- speed
   max_spd=3,
   x=64,  -- x,y coordinate, RELATIVE TO THE SCREEN
@@ -209,7 +209,7 @@ end
 -- exploration
 -- ** exploration - initialisation ** --
 function bee_exploration_init(bee)
--- each bee will start at a random position, with a random polen quantity
+-- each bee will start at a random position, with a random pollen quantity
  bee.x=flr(rnd(map_width-4 - p.sp_sz * 8)+4)  -- x,y coordinates
  bee.y=flr(rnd(map_height-4 - p.sp_sz * 8)+4)
  bee.cur_pln=flr(rnd(30))  -- could be improved with a nice gaussian
@@ -228,7 +228,7 @@ function flowers_init(nbr)
    sp_bs_clr=13,  -- base color, used to change the color
    sp_clr=13,--flr(rnd(4)+13),  -- final color
    sp_sz=4,  -- sprite size
-   pln=flr(rnd(6))  -- polen quantity
+   pln=flr(rnd(6))  -- pollen quantity
   })
  end
 end
@@ -242,7 +242,7 @@ function hive_init()
   box={x1=10,y1=14,x2=18,y2=22},  -- collision box, centered on the door
   sp=70,  -- current sprite
   sp_sz=4,  -- sprite size
-  pln=0  -- polen quantity
+  pln=0  -- pollen quantity
  }
 end
 
@@ -399,7 +399,7 @@ function player_exploration_update()
   end
  end
  
- -- polen
+ -- pollen
   p.cur_spd=p.max_spd-flr(p.cur_pln/(p.max_pln + 1))
 end
 
@@ -441,7 +441,7 @@ function get_down()
  if(p.tmr == 75) then
   -- first try to get into hive
   if(not get_into_hive()) then
-   -- if not into hive, try to collect polen
+   -- if not into hive, try to collect pollen
    for f in all(flowers) do
     if(check_flower(f)) then
      -- todo break, idk how to do that
@@ -532,7 +532,7 @@ function flower_draw(f)
  pal() 
  if(f.pln > 0) then
   for i=1,f.pln do
-   -- beautiful polen bits...
+   -- beautiful pollen bits...
    modificator_x=(6+(i*17))%(f.sp_sz*8)
    modificator_y=(7+(i*41))%(f.sp_sz*8)
    
@@ -569,6 +569,33 @@ function exploration_draw()
  
  -- player
  player_draw()
+ 
+ -- reset camera
+ camera()
+  
+ -- pollen
+ if(p.cur_pln < 0.25*p.max_pln) then
+  palt(9,true)
+ else
+  palt(9,false)
+ end
+ spr(84,2,9,2,1)
+ if(p.cur_pln < 0.75*p.max_pln) then
+  palt(9,true)
+ else
+  palt(9,false)
+ end
+ spr(68,2,1,2,1)
+ palt(9,false)
+ if(p.cur_pln > p.max_pln) then
+  for i=1,p.max_pln-p.cur_pln do
+   local offset=flr(rnd(16))
+   pset(2+offset,1+offset,9)
+   pset(2+offset+1,1+offset,9)
+   pset(2+offset,1+offset+1,9)
+   pset(2+offset+1,1+offset+1,9)
+  end
+ end
  
  -- textboxes
  dtb_draw()
@@ -648,7 +675,7 @@ function player_story_update()
   p.tmr = 0  -- restart timer
  end
 
- -- polen
+ -- pollen
   p.cur_spd=p.max_spd-flr(p.cur_pln/(p.max_pln + 1))
 end
 
