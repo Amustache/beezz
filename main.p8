@@ -405,20 +405,32 @@ end
 
 bees_hello = {"hey!","greetings.","hi!","howdy!","bonjour!","good day."}
 bees_ok = {"all is right!","you okay?","i'm fine!","all the best for you.","all hail the queen!","la probabilité de voir ce message est de 0.005%."}
+bees_ciao = {"see you!","ciao!","au revoir.","see you soon!","thanks."}
 
 function talk_to_bee(bee)
  dtb_disp(bee.name..": "..bees_hello[1+flr(rnd(#bees_hello))])
  if(bee.cur_pln > bee.max_pln) then
-  dtb_disp(bee.name..": j'ai trop de pollen!")
-  dtb_disp(bee.name..": est-ce que tu peux m'en prendre?")
+  dtb_disp(bee.name..": i have too much pollen!")
+  dtb_disp(bee.name..": can you take me some?")
+  if(p.cur_pln<p.max_pln) then
+   local qt=min(p.max_pln-p.cur_pln,bee.cur_pln-bee.max_pln)
+   bee.cur_pln-=qt
+   p.cur_pln+=qt
+  end
  else
   if(bee.cur_pln < bee.max_pln) then
-   dtb_disp(bee.name..": j'ai pas assez de pollen!")
-   dtb_disp(bee.name..": est-ce que tu peux m'en donner?")
+   dtb_disp(bee.name..": i don't have enough pollen...")
+   dtb_disp(bee.name..": do you have any?")
+  if(p.cur_pln>0) then
+   local qt=min(p.cur_pln,bee.max_pln-bee.cur_pln)
+   bee.cur_pln+=qt
+   p.cur_pln-=qt
+  end
   else
    dtb_disp(bee.name..": "..bees_ok[1+flr(rnd(#bees_ok))])
   end
  end
+ dtb_disp(bee.name..": "..bees_ciao[1+flr(rnd(#bees_ciao))])
  p.action=false
 end
 
@@ -587,7 +599,7 @@ function exploration_draw()
  end
  spr(68,2,1,2,1)
  palt(9,false)
- if(p.cur_pln > p.max_pln) then
+ if(p.cur_pln > p.max_pln) then  -- does not work
   for i=1,p.max_pln-p.cur_pln do
    local offset=flr(rnd(16))
    pset(2+offset,1+offset,9)
